@@ -7,7 +7,7 @@ LAMBDA_FUNCTION_NAME ?= my-lambda-function
 help: ## Show available commands
 	@echo "make setup - Setup everything for GitHub Actions"
 
-setup: create-oidc create-role create-function update-workflow
+setup: create-oidc create-role update-workflow
 
 create-oidc:
 	@aws iam create-open-id-connect-provider \
@@ -22,15 +22,7 @@ create-role:
 	@rm -f trust-policy.json
 	@echo "Role ARN: arn:aws:iam::$(AWS_ACCOUNT_ID):role/GitHubActionRole"
 
-create-function:
-	@python build.py
-	@aws lambda create-function \
-		--function-name $(LAMBDA_FUNCTION_NAME) \
-		--runtime python3.11 \
-		--role arn:aws:iam::$(AWS_ACCOUNT_ID):role/GitHubActionRole \
-		--handler lambda_function.lambda_handler \
-		--zip-file fileb://lambda-function.zip 2>/dev/null || echo "Function exists"
-	@rm -f lambda-function.zip
+
 
 update-workflow:
 	@sed -i.bak 's/123456789012/$(AWS_ACCOUNT_ID)/g' .github/workflows/deploy.yml 2>/dev/null || true

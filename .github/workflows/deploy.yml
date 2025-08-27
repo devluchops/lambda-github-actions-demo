@@ -33,7 +33,21 @@ jobs:
           aws-region: us-east-1
           
       - name: Deploy Lambda Function
-        uses: aws-actions/aws-lambda-deploy@v1
-        with:
-          function-name: my-lambda-function
-          code-artifacts-dir: ./dist
+        run: |
+          # Check if function exists
+          if aws lambda get-function --function-name my-lambda-function >/dev/null 2>&1; then
+            echo "Function exists, updating code..."
+            cd ./dist && zip -r ../lambda-function.zip .
+            aws lambda update-function-code \
+              --function-name my-lambda-function \
+              --zip-file fileb://../lambda-function.zip
+          else
+            echo "Creating new function..."
+            cd ./dist && zip -r ../lambda-function.zip .
+            aws lambda create-function \
+              --function-name my-lambda-function \
+              --runtime python3.11 \
+              --role arn:aws:iam::292967571313:role/LambdaExecutionRole \
+              --handler lambda_function.lambda_handler \
+              --zip-file fileb://../lambda-function.zip
+          fi
