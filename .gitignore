@@ -1,0 +1,7 @@
+dist/
+lambda-function.zip
+trust-policy.json
+*.bak
+__pycache__/
+*.pyc
+.DS_Store
