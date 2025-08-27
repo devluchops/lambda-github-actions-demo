@@ -1,5 +1,5 @@
 AWS_ACCOUNT_ID ?= $(shell aws sts get-caller-identity --query Account --output text)
-GITHUB_REPO ?= yourusername/lambda-github-actions-demo
+GITHUB_REPO ?= devluchops/lambda-github-actions-demo
 LAMBDA_FUNCTION_NAME ?= my-lambda-function
 
 .PHONY: help setup create-oidc create-role create-function update-workflow
