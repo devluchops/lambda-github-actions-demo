@@ -27,7 +27,7 @@ create-function:
 	@aws lambda create-function \
 		--function-name $(LAMBDA_FUNCTION_NAME) \
 		--runtime python3.11 \
-		--role arn:aws:iam::$(AWS_ACCOUNT_ID):role/service-role/lambda-basic-execution \
+		--role arn:aws:iam::$(AWS_ACCOUNT_ID):role/GitHubActionRole \
 		--handler lambda_function.lambda_handler \
 		--zip-file fileb://lambda-function.zip 2>/dev/null || echo "Function exists"
 	@rm -f lambda-function.zip

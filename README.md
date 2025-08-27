@@ -1,82 +1,108 @@
 # Lambda GitHub Actions Demo
 
-This repository demonstrates how to test and use GitHub Actions to automatically deploy Lambda functions when you push code or configuration changes to your repository. The GitHub Actions workflow provides a declarative, simple YAML interface that eliminates the complexity of manual deployment steps.
+This project shows how to automatically deploy AWS Lambda functions using GitHub Actions. When you push code to the main branch, it automatically updates your Lambda function.
 
-This is a practical implementation for testing the automatic deployment of AWS Lambda functions using GitHub Actions with Python.
+## How it works
+
+Instead of manually deploying your Lambda function every time you make changes, this setup does it automatically. It uses GitHub Actions to build and deploy your code whenever you push to the main branch.
+
+The deployment uses OIDC (OpenID Connect) to securely connect GitHub to AWS without storing AWS credentials in your repository.
+
+## Prerequisites
+
+- AWS account with admin access
+- GitHub repository
+- AWS CLI configured locally
+- `make` command available
 
 ## Setup
 
-### Prerequisites
-- AWS Account with appropriate permissions
-- GitHub repository with Actions enabled
-- AWS IAM role configured for OIDC with GitHub Actions
+1. **Configure your repository name**
+   
+   Edit the `Makefile` and update line 2 with your actual GitHub repository:
+   ```
+   GITHUB_REPO ?= your-username/your-repo-name
+   ```
 
-### AWS IAM Role Setup
+2. **Run the setup**
+   ```bash
+   make setup
+   ```
+   
+   This creates all the necessary AWS resources:
+   - OIDC provider for GitHub
+   - IAM roles and permissions
+   - Lambda function
+   - Updates the workflow file
 
-1. Create an IAM role with the following trust policy:
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub": "repo:yourusername/lambda-github-actions-demo:ref:refs/heads/main"
-        }
-      }
-    }
-  ]
-}
+3. **Push your code**
+   
+   That's it. Push to main branch and watch it deploy automatically.
+
+## Project structure
+
+```
+├── .github/workflows/deploy.yml    # GitHub Actions workflow
+├── src/lambda_function.py          # Your Lambda code
+├── requirements.txt                # Python dependencies
+├── build.py                        # Local build script
+├── Makefile                        # Setup commands
+└── README.md
 ```
 
-2. Attach the following policies to the role:
-   - `AWSLambdaFullAccess` (or create a custom policy with minimal permissions)
+## Local development
 
-### Configuration
-
-1. Update the workflow file (`.github/workflows/deploy.yml`) with your:
-   - AWS Account ID in the role ARN
-   - AWS Region
-   - Lambda function name
-
-2. Create your Lambda function in AWS Console or via CLI:
-```bash
-aws lambda create-function \
-  --function-name my-lambda-function \
-  --runtime python3.11 \
-  --role arn:aws:iam::123456789012:role/lambda-execution-role \
-  --handler lambda_function.lambda_handler \
-  --zip-file fileb://lambda-function.zip
-```
-
-## Local Development
-
-### Test locally:
+Test your function locally:
 ```bash
 python -c "from src.lambda_function import lambda_handler; print(lambda_handler({}, None))"
 ```
 
-### Build package locally:
+Build the deployment package:
 ```bash
 python build.py
 ```
 
-## Deployment
+## Making changes
 
-Push to the `main` branch to trigger automatic deployment via GitHub Actions.
+**Add Python packages:** Update `requirements.txt`
 
-## Project Structure
+**Change function name:** Update `LAMBDA_FUNCTION_NAME` in Makefile and `function-name` in the workflow file
 
+**Add environment variables:** Use AWS console or CLI
+
+## What gets created in AWS
+
+- **OIDC Provider:** Allows GitHub to authenticate with AWS
+- **GitHubActionRole:** Permissions for GitHub Actions to deploy
+- **LambdaExecutionRole:** Permissions for the Lambda function to run
+- **Lambda Function:** Your actual function
+
+## Troubleshooting
+
+**"Invalid credentials" error:**
+```bash
+aws sts get-caller-identity  # Check AWS CLI setup
 ```
-├── .github/workflows/deploy.yml  # GitHub Actions workflow
-├── src/lambda_function.py        # Main Lambda function
-├── requirements.txt              # Python dependencies
-├── build.py                     # Local build script
-└── README.md                    # This file
+
+**"Function not found" error:**
+```bash
+make create-function
 ```
+
+**GitHub Actions deployment fails:**
+Check the Actions tab in your GitHub repository for detailed error messages.
+
+## Manual commands
+
+```bash
+# List your Lambda functions
+aws lambda list-functions
+
+# Invoke your function
+aws lambda invoke --function-name my-lambda-function output.json
+
+# View function logs
+aws logs describe-log-groups --log-group-name-prefix /aws/lambda/my-lambda-function
+```
+
+This setup follows AWS documentation and uses their official GitHub Actions for Lambda deployment.
